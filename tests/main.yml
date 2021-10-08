@@ -1,0 +1,13 @@
+---
+- hosts: webserver1
+  gather_facts: yes
+  become: yes
+  vars:
+    ServerName: goadminops.com
+    ServerAdmin: alfred98valderrama@gmail.com
+    ServerAlias: www.goadminops.com
+    DocumentRoot: /var/www/goadminops.com
+    #multi_php: true # (Optional)
+    php_version: "7.3"
+  roles:
+    - redopsbay.lampstack

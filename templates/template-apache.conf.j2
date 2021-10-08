@@ -1,0 +1,54 @@
+<VirtualHost *:80>
+     ServerAdmin {{ ServerAdmin }}
+     ServerName {{ ServerName }}
+     DocumentRoot {{ DocumentRoot }}
+    # DirectoryIndex info.php
+
+     <Directory {{ DocumentRoot }}>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Order allow,deny
+        allow from all
+        
+        # use mod_rewrite for pretty URL support
+        RewriteEngine on
+    
+        # if $showScriptName is false in UrlManager, do not allow accessing URLs with script name
+        RewriteRule ^index.php/ - [L,R=404]
+        
+        # Disable access to this sensitive locations
+
+        RedirectMatch 404 /\.git
+		    RedirectMatch 403 /\.htaccess
+
+		  <FilesMatch \.php$>
+      	  # For Apache version 2.4.10 and above, use SetHandler to run PHP as a fastCGI process server
+      		{% if php_version is defined %}
+            SetHandler "proxy:unix:/run/php/php{{ php_version }}-fpm.sock|fcgi://localhost"
+          {% else %}
+            SetHandler "proxy:unix:/run/php/php7.3-fpm.sock|fcgi://localhost"
+          {% endif %}
+    	</FilesMatch>
+        
+        # If a directory or a file exists, use the request directly
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+      
+        # Otherwise forward the request to index.php
+        RewriteRule . index.php
+
+	    # ...other settings...
+     </Directory>
+
+    <FilesMatch \.php$>
+      # For Apache version 2.4.10 and above, use SetHandler to run PHP as a fastCGI process server
+      	{% if php_version is defined %}
+			SetHandler "proxy:unix:/run/php/php{{ php_version }}-fpm.sock|fcgi://localhost"
+	   	{% else %}
+			SetHandler "proxy:unix:/run/php/php7.3-fpm.sock|fcgi://localhost"
+		{% endif %}
+    </FilesMatch>
+
+     ErrorLog ${APACHE_LOG_DIR}/{{ ServerName }}_error.log
+     CustomLog ${APACHE_LOG_DIR}/{{ ServerName }}_access.log combined
+</VirtualHost>

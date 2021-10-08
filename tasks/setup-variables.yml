@@ -1,0 +1,20 @@
+---
+- name: Set Server Name
+  set_fact:
+    ServerName: "{{ __server_name }}"
+  when: ServerName is not defined
+
+- name: Set Server Admin
+  set_fact:
+    ServerName: "{{ __server_admin }}"
+  when: ServerAdmin is not defined
+
+- name: Set Server Alias
+  set_fact:
+    ServerAlias: "{{ __server_alias }}"
+  when: ServerAlias is not defined
+
+- name: Set Document Root
+  set_fact:
+    DocumentRoot: "{{ __document_root }}"
+  when: DocumentRoot is not defined

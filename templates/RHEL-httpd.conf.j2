@@ -1,0 +1,37 @@
+<VirtualHost *:80>
+  ServerName {{ ServerName }}
+  ServerAlias {{ ServerAlias }}
+  RedirectMatch 404 /\.git
+
+  Redirect permanent / https://{{ ServerName }}/
+</VirtualHost>
+
+<VirtualHost *:443>
+  ServerName {{ ServerName }}
+  ServerAlias {{ ServerName }}
+
+  <If "%{HTTP_HOST} == '{{ ServerName }}'">
+    Redirect permanent / https://{{ ServerName }}/
+  </If>
+
+  DirectoryIndex index.html index.php
+  DocumentRoot {{ DocumentRoot }}
+  RedirectMatch 404 /\.git
+
+  ErrorLog /var/log/httpd/{{ ServerName }}-error.log
+  CustomLog /var/log/httpd/{{ ServerName }}-access.log combined
+
+
+# Uncomment this line after installing SSL Certificates
+#  SSLEngine On
+#  SSLCertificateFile /etc/letsencrypt/live/{{ ServerName }}/cert.pem
+#  SSLCertificateKeyFile /etc/letsencrypt/live/{{ ServerName }}/privkey.pem
+#  SSLCertificateChainFile /etc/letsencrypt/live/{{ ServerName }}/chain.pem
+
+  <Directory {{ DocumentRoot }}>
+      Options FollowSymLinks
+      AllowOverride All
+      Require all granted
+      RedirectMatch 404 /\.git
+  </Directory>
+</VirtualHost>

@@ -1,0 +1,28 @@
+---
+- name: restart mysql
+  systemd: "name=mysql state=restarted"
+
+- name: restart apache
+  systemd: "name=apache2 state=restarted"
+
+- name: restart httpd
+  systemd: "name=httpd state=restarted"
+
+- name: restart mariadb
+  systemd: "name=mariadb state=restarted"
+
+- name: start apache
+  systemd: "name=apache2 state=started enabled=yes"
+
+- name: start mysql
+  systemd: "name=mysql state=started enabled=yes"
+
+- name: start httpd
+  systemd: "name=httpd state=started enabled=yes"
+
+- name: start mariadb
+  systemd: "name=mariadb state=started enabled=yes"
+
+- name: enable php
+  systemd: "name=php{{ php_version }}-fpm enabled=yes state=started"
+  when: php_version is defined

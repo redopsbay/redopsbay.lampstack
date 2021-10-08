@@ -1,0 +1,88 @@
+---
+- name: Install epel-release first and update yum repository cache
+  yum:
+    name: epel-release
+    state: present
+    update_cache: yes
+    
+- name: Install Necessary Packages
+  yum:
+    name: "{{ CentOS7_php_remi_repo }}"
+    state: present
+  
+- name: Install Necessary Packages
+  yum:
+    enablerepo: "{{ CentOS8_repo }}"
+    name: "{{ CentOS8_Packages }}"
+    state: present
+
+- name: Downloading Composer Installer
+  get_url:
+    url: https://getcomposer.org/installer
+    dest: /tmp/composer-setup.php
+
+- name: Installing Composer
+  shell: |
+    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+  become_user: root
+
+- name: Delete the default site config on httpd
+  file:
+    state: absent
+    path: "{{ default_site_config }}"
+
+- name: Copy httpd configuration to Web Server
+  template:
+    src: RHEL-httpd.conf.j2
+    dest: '{{ CentOS_Vhost }}'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enabling TCP HTTP port on Firewalld
+  firewalld:
+    port: "80/tcp"
+    permanent: true
+    zone: public
+    state: enabled
+
+- name: Enabling port on UDP HTTP Firewalld
+  firewalld:
+    port: "80/udp"
+    permanent: true
+    zone: public
+    state: enabled
+
+- name: Enabling port TCP MYSQL on Firewalld
+  firewalld:
+    port: "3306/tcp"
+    permanent: true
+    zone: public
+    state: enabled
+
+- name: Enabling port UDP MYSQL on Firewalld
+  firewalld:
+    port: "3306/udp"
+    permanent: true
+    zone: public
+    state: enabled
+
+- name: Creating "{{ DocumentRoot }}" with proper permissions
+  file:
+    path: "{{ DocumentRoot }}"
+    state: directory
+    mode: '0755'
+    owner: 'apache'
+    group: 'apache'
+  notify: restart httpd
+  notify: restart mariadb
+
+- name: Starting services
+  systemd:
+    name: httpd
+    state: started
+
+- name: Starting services
+  systemd:
+    name: mariadb
+    state: started

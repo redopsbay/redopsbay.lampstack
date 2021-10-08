@@ -1,0 +1,126 @@
+---
+- name: Install APT Transport HTTPS Package
+  apt:
+    name: ['apt-transport-https', 'software-properties-common', 'gnupg2', 'ca-certificates', 'lsb-release']
+    state: present
+
+- name: PHP GPG for Repository
+  get_url:
+    url: https://packages.sury.org/php/apt.gpg
+    dest: /tmp/apt.gpg
+    mode: '0755'
+
+- name: Add GPG key
+  apt_key:
+    file: /tmp/apt.gpg
+    state: present
+  become: true
+
+- name: Add PHP Repositories
+  shell: echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php7.list
+
+- name: Update apt packages cache
+  apt:
+    update_cache: yes
+
+- name: Install Necessary Packages
+  apt:
+    name: "{{ Ubuntu_php5.6 }}"
+    state: present
+  when: multi_php is not defined and php_version == "5.6"
+  
+- name: Install Necessary Packages
+  apt:
+    name: "{{ Ubuntu_php7_0 }}"
+    state: present
+  when: multi_php is not defined and php_version == "7.0"
+  
+- name: Install Necessary Packages
+  apt:
+    name: "{{ Ubuntu_php7_1 }}"
+    state: present
+  when: multi_php is not defined and php_version == "7.1"
+  
+- name: Install Necessary Packages
+  apt:
+    name: "{{ Ubuntu_php7_2 }}"
+    state: present
+  when: multi_php is not defined and php_version == "7.2"
+  
+- name: Install Necessary Packages
+  apt:
+    name: "{{ Ubuntu_php7_3 }}"
+    state: present
+  when: multi_php is not defined and php_version == "7.3"
+  
+- name: Install Necessary Packages
+  apt:
+    name: "{{ Ubuntu_php7_4 }}"
+    state: present
+  when: multi_php is not defined and php_version == "7.4"
+  
+- name: Install Multiple PHP Verion Necessary Packages
+  apt:
+    name: "{{ Ubuntu_Multi_PHP }}"
+    state: present
+  when: multi_php is defined and php_version is not defined
+  
+- name: Downloading Composer
+  get_url:
+    url: https://getcomposer.org/installer
+    dest: /tmp/composer-setup.php
+
+- name: Installing Composer
+  shell: |
+    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+  
+- name: Delete the default site config on apache2
+  file:
+    state: absent
+    path: "{{ debian_default_site_config }}"
+
+- name: Template a file to /etc/apache2/sites-available/000-config.conf
+  template:
+    src: templates/000-config.conf.j2
+    dest: /etc/apache2/sites-available/000-config.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: multi_php is not defined
+  
+
+- name: Template a file to /etc/apache2/sites-available/000-config.conf
+  template:
+    src: templates/template-apache.conf.j2
+    dest: /etc/apache2/sites-available/000-config.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: multi_php is defined
+  
+
+- name: Enable the 000-config.conf configuration on apache2
+  file:
+    src: /etc/apache2/sites-available/000-config.conf
+    dest: "{{ Debian_Vhost }}"
+    owner: root
+    group: root
+    state: link
+    mode: '0777'
+  
+- name: Creating "{{ DocumentRoot }}" with proper permissions
+  file:
+    path: "{{ DocumentRoot }}"
+    state: directory
+    mode: '0755'
+    owner: 'www-data'
+    group: 'www-data'
+
+- name: Execute a2enmod rewrite
+  shell: a2enmod rewrite actions fcgid alias proxy_fcgi headers && a2dismod --force autoindex
+  notify: enable php
+
+- name: Execute a2enmod ssl
+  shell: a2enmod ssl
+  notify: restart apache
+  
